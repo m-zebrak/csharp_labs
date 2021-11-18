@@ -28,9 +28,9 @@ namespace ConsoleApp1
             this.a = b = c = a;
     }
 
-    public class Equilibrium : Triangle
+    public class Isosceles : Triangle
     {
-        public Equilibrium(float a, float b)
+        public Isosceles(float a, float b)
         {
             this.a = c = a;
             this.b = b;
@@ -53,7 +53,7 @@ namespace ConsoleApp1
         {
             var triangles = new Triangle[3];
             triangles[0] = new Equilateral(3);
-            triangles[1] = new Equilibrium(10, 2);
+            triangles[1] = new Isosceles(10, 2);
             triangles[2] = new Rectangular(3, 4);
 
             foreach (Triangle t in triangles)
