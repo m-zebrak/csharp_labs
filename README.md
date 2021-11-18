@@ -28,3 +28,10 @@ The employee class must contain at least 5 attributes. Every employee should hav
 ### [Task 3](1/t3/Program.cs)
 
 Add to the file from the second task reading and writing data in TXT, XML and JSON format (minimum one). Use the builder design pattern for this. The abstraction of a particular record can be passed to the directory constructor which has a `Save ()` method. 
+
+#
+
+
+### [Task 4](1/t4/Program.cs)
+ 
+Extend the previous task with the ability to encrypt data with the Caesar method. The shift block should be larger than one. In order to store it, use the `ConfigurationManager` class (first add a reference to the` System.Configuration` library). 

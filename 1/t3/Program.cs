@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 
-namespace ConsoleApp1
+namespace t3
 {
     public static class Globals
     {
@@ -33,19 +33,13 @@ namespace ConsoleApp1
             List<T> employees = new();
             foreach (var emp in File.ReadAllLines(path + ".txt"))
             {
-                var split = emp.Split(",").Select(s => s.Trim());
+                var el = emp.Split(",").Select(s => s.Trim()).ToList();
 
-                var first = split.ElementAt(0);
-                var second = split.ElementAt(1);
-                var third = split.ElementAt(2);
-                var fourth = split.ElementAt(3);
-                var fifth = split.ElementAt(4);
-
-                var pesel = long.Parse(first[(first.IndexOf("=") + 1)..]);
-                var firstName = second[(second.IndexOf("\"") + 1)..^1];
-                var lastName = third[(third.IndexOf("\"") + 1)..^1];
-                var age = int.Parse(fourth[(fourth.IndexOf("=") + 1)..]);
-                var jobPosition = fifth[(fifth.IndexOf("\"") + 1)..^2];
+                var pesel = long.Parse(el[0][(el[0].IndexOf("=") + 1)..]);
+                var firstName = el[1][(el[1].IndexOf("\"") + 1)..^1];
+                var lastName = el[2][(el[2].IndexOf("\"") + 1)..^1];
+                var age = int.Parse(el[3][(el[3].IndexOf("=") + 1)..]);
+                var jobPosition = el[4][(el[4].IndexOf("\"") + 1)..^2];
 
                 employees.Add(new Employee(pesel, firstName, lastName, age, jobPosition) as T);
             }
@@ -56,20 +50,15 @@ namespace ConsoleApp1
 
     public class XMLBuilder<T> : IGenericBuilder<T> where T : Employee
     {
-        private string CreateXML(List<T> employees) =>
-            new XElement("employees",
-                employees.Select(e => new XElement("employee",
-                    new XAttribute("pesel", e.Pesel),
-                    new XElement("firstname", e.FirstName),
-                    new XElement("lastname", e.LastName),
-                    new XElement("age", e.Age),
-                    new XElement("jobposition", e.JobPosition)))).ToString();
+        public void BuildPrint(List<T> employees)
+        {
+            var serializer = new XmlSerializer(typeof(List<T>));
+            var writer = new StringWriter();
+            serializer.Serialize(writer, employees);
+            Console.WriteLine(writer.ToString());
+        }
 
-        public void BuildPrint(List<T> employees) =>
-            Console.WriteLine(CreateXML(employees));
-
-        public void BuildSave(List<T> employees) //=>
-            // File.WriteAllText($"{Globals.Path}\\{typeof(T).Name}s.xml", CreateXML(employees));
+        public void BuildSave(List<T> employees)
         {
             var serializer = new XmlSerializer(typeof(List<T>));
             var writer = new StreamWriter($"{Globals.Path}\\{typeof(T).Name}s.xml");
@@ -94,12 +83,8 @@ namespace ConsoleApp1
         public void BuildSave(List<T> employees) =>
             File.WriteAllText($"{Globals.Path}\\{typeof(T).Name}s.json", JsonSerializer.Serialize(employees));
 
-        public List<T> BuildRead(string path)
-        {
-            var json = File.ReadAllText(path + ".json");
-            var employees = JsonSerializer.Deserialize<List<T>>(json);
-            return employees;
-        }
+        public List<T> BuildRead(string path) =>
+            JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path + ".json"));
     }
 
     public class EmployeeFile<T> where T : Employee
@@ -115,8 +100,7 @@ namespace ConsoleApp1
 
         public void AddEmployee(T employee)
         {
-            if (Validate(employee))
-                _employeeList.Add(employee);
+            if (Validate(employee)) _employeeList.Add(employee);
         }
 
         public bool RemoveEmployee(T employee)
@@ -126,12 +110,9 @@ namespace ConsoleApp1
             return true;
         }
 
-        public void ShowEmployees()
-        {
-            Console.WriteLine("\nEmployees list:");
-            foreach (var employee in _employeeList)
-                Console.WriteLine(employee.Show());
-        }
+        public void ShowEmployees() =>
+            _employeeList.ForEach(employee => Console.WriteLine(employee.Show()));
+
 
         public void Search(string firstName = null, string lastName = null, int age = 0, string jobPosition = null)
         {
@@ -151,8 +132,8 @@ namespace ConsoleApp1
                     matches.Add(employee);
             }
 
-            foreach (var employee in matches.ToList())
-                Console.WriteLine(employee.Show());
+            matches.ToList()
+                .ForEach(employee => Console.WriteLine(employee.Show()));
         }
 
         public void Print() =>
@@ -253,7 +234,7 @@ namespace ConsoleApp1
     {
         private static void Main(string[] args)
         {
-            var file = new EmployeeFile<Employee>(new JSONBuilder<Employee>());
+            var file = new EmployeeFile<Employee>(new XMLBuilder<Employee>());
             var employees = new Employee[5];
 
             employees[0] = new Employee(99123456789, "Jan", "Kowalski", 19, "programmer");
@@ -265,9 +246,10 @@ namespace ConsoleApp1
             foreach (var employee in employees)
                 file.AddEmployee(employee);
 
-            // file.Print();
+            file.Print();
             file.Save();
             file.Read($"{Globals.Path}\\Employees");
+            Console.WriteLine("\nEmployees list:");
             file.ShowEmployees();
         }
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ConsoleApp1
+namespace t2
 {
     public class EmployeeFile<T> where T : Employee
     {
