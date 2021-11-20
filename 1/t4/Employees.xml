@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ArrayOfEmployee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Employee>
+    <Pesel>99123456789</Pesel>
+    <FirstName>Jan</FirstName>
+    <LastName>Kowalski</LastName>
+    <Age>19</Age>
+    <JobPosition>programmer</JobPosition>
+  </Employee>
+  <Employee>
+    <Pesel>99123456782</Pesel>
+    <FirstName>Adam</FirstName>
+    <LastName>Nowak</LastName>
+    <Age>29</Age>
+    <JobPosition />
+  </Employee>
+  <Employee>
+    <Pesel>99123456781</Pesel>
+    <FirstName>Adam</FirstName>
+    <LastName>Drugi</LastName>
+    <Age>19</Age>
+    <JobPosition>tester</JobPosition>
+  </Employee>
+  <Employee>
+    <Pesel>99123456780</Pesel>
+    <FirstName>Rafal</FirstName>
+    <LastName>Super</LastName>
+    <Age>20</Age>
+    <JobPosition />
+  </Employee>
+</ArrayOfEmployee>

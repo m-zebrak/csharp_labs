@@ -1,0 +1,4 @@
+Employee(pesel=99123456789, firstName="Jan",  lastName="Kowalski",  age=19, jobPosition="programmer")
+Employee(pesel=99123456782, firstName="Adam",  lastName="Nowak",  age=29, jobPosition="")
+Employee(pesel=99123456781, firstName="Adam",  lastName="Drugi",  age=19, jobPosition="tester")
+Employee(pesel=99123456780, firstName="Rafal",  lastName="Super",  age=20, jobPosition="")

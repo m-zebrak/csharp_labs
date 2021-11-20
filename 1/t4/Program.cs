@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
@@ -53,6 +51,7 @@ namespace t4
         void BuildSave(List<T> employees);
         void BuildSaveEncrypted(List<T> employees, int offset);
         List<T> BuildRead(string path);
+        List<T> BuildReadEncrypted(string path, int offset);
     }
 
     public class TXTBuilder<T> : IGenericBuilder<T> where T : Employee
@@ -69,22 +68,14 @@ namespace t4
             File.WriteAllText($"{Globals.Path}\\{typeof(T).Name}s{info}.txt", content);
         }
 
-        public void BuildPrint(List<T> employees) =>
-            Print(employees, emp => emp.Show());
-
-        public void BuildPrintEncrypted(List<T> employees, int offset) =>
-            Print(employees, emp => CeasarCipher.Encipher(emp.Show(), offset));
-
-        public void BuildSave(List<T> employees) =>
-            Save(employees);
-
-        public void BuildSaveEncrypted(List<T> employees, int offset) =>
-            Save(employees, true, offset, "Encrypted");
-
-        public List<T> BuildRead(string path)
+        private static List<T> Read(string path, bool encrypted = false, int offset = 0)
         {
             List<T> employees = new();
-            foreach (var emp in File.ReadAllLines(path + ".txt"))
+
+            var lines = File.ReadLines(path + ".txt");
+            if (encrypted) lines = lines.Select(line => CeasarCipher.Decipher(line, offset)).ToList();
+
+            foreach (var emp in lines)
             {
                 var el = emp.Split(",").Select(s => s.Trim()).ToList();
 
@@ -99,6 +90,24 @@ namespace t4
 
             return employees;
         }
+
+        public void BuildPrint(List<T> employees) =>
+            Print(employees, emp => emp.Show());
+
+        public void BuildPrintEncrypted(List<T> employees, int offset) =>
+            Print(employees, emp => CeasarCipher.Encipher(emp.Show(), offset));
+
+        public void BuildSave(List<T> employees) =>
+            Save(employees);
+
+        public void BuildSaveEncrypted(List<T> employees, int offset) =>
+            Save(employees, true, offset, "Encrypted");
+
+        public List<T> BuildRead(string path) =>
+            Read(path);
+
+        public List<T> BuildReadEncrypted(string path, int offset) =>
+            Read(path, true, offset);
     }
 
     public class XMLBuilder<T> : IGenericBuilder<T> where T : Employee
@@ -120,6 +129,23 @@ namespace t4
                 encrypted ? CeasarCipher.Encipher(writer.ToString(), offset) : writer.ToString());
         }
 
+        private static List<T> Read(string path, bool encrypted = false, int offset = 0)
+        {
+            var xml = encrypted
+                ? new StringReader(CeasarCipher.Decipher(File.ReadAllText(path + ".xml"), offset))
+                : new StringReader(File.ReadAllText(path + ".xml"));
+            var serializer = new XmlSerializer(typeof(List<T>));
+            try
+            {
+                var employees = (List<T>) serializer.Deserialize(xml);
+                return employees;
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ArgumentException("The given offset is wrong!");
+            }
+        }
+
         public void BuildPrint(List<T> employees) =>
             Print(employees);
 
@@ -132,13 +158,11 @@ namespace t4
         public void BuildSaveEncrypted(List<T> employees, int offset) =>
             Save(employees, true, offset, "Encrypted");
 
-        public List<T> BuildRead(string path)
-        {
-            var xml = new StringReader(File.ReadAllText(path + ".xml"));
-            var serializer = new XmlSerializer(typeof(List<T>));
-            var employees = (List<T>) serializer.Deserialize(xml);
-            return employees;
-        }
+        public List<T> BuildRead(string path) =>
+            Read(path);
+
+        public List<T> BuildReadEncrypted(string path, int offset) =>
+            Read(path, true, offset);
     }
 
     public class JSONBuilder<T> : IGenericBuilder<T> where T : Employee
@@ -158,6 +182,9 @@ namespace t4
 
         public List<T> BuildRead(string path) =>
             JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path + ".json"));
+
+        public List<T> BuildReadEncrypted(string path, int offset) =>
+            JsonSerializer.Deserialize<List<T>>(CeasarCipher.Decipher(File.ReadAllText(path + ".json"), offset));
     }
 
     public class EmployeeFile<T> where T : Employee
@@ -225,6 +252,9 @@ namespace t4
 
         public void Read(string path) =>
             _employeeList = _builder.BuildRead(path);
+
+        public void ReadEncrypted(string path, int offset) =>
+            _employeeList = _builder.BuildReadEncrypted(path, offset);
     }
 
     public class Employee
@@ -308,7 +338,7 @@ namespace t4
     {
         private static void Main(string[] args)
         {
-            var file = new EmployeeFile<Employee>(new JSONBuilder<Employee>());
+            var file = new EmployeeFile<Employee>(new XMLBuilder<Employee>());
             var employees = new List<Employee>
             {
                 new(99123456789, "Jan", "Kowalski", 19, "programmer"),
@@ -320,11 +350,18 @@ namespace t4
 
             employees.ForEach(employee => file.AddEmployee(employee));
 
-            file.Print();
-            file.PrintEncrypted(Globals.Offset);
+            // file.Print();
+            // file.PrintEncrypted(Globals.Offset);
             file.Save();
             file.SaveEncrypted(Globals.Offset);
-            // file.Read($"{Globals.Path}\\Employees");
+
+            file.Read($"{Globals.Path}\\Employees");
+            Console.WriteLine("\nREAD:");
+            file.ShowEmployees();
+
+            Console.WriteLine("\nREAD ENCRYPTED:");
+            file.ReadEncrypted($"{Globals.Path}\\EmployeesEncrypted", Globals.Offset);
+            file.ShowEmployees();
         }
     }
 }
