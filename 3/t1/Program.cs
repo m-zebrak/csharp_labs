@@ -5,128 +5,266 @@ using System.Linq;
 
 namespace t1
 {
-    public class SortedList
+    //SINGLETON:
+
+    public class LoadBalancer
     {
-        private readonly List<int> _list = new();
-        private IStrategy _strategy;
+        private static LoadBalancer _instance;
+        private static readonly object Locker = new();
+        public string Value { get; set; }
 
-        public SortedList()
+        public static LoadBalancer GetInstance(string value)
         {
-        }
-
-        public SortedList(IStrategy strategy)
-        {
-            _strategy = strategy;
-        }
-
-        public void SetStrategy(IStrategy strategy) =>
-            _strategy = strategy;
-
-        public void Add(int number) =>
-            _list.Add(number);
-
-
-        public void Sort()
-        {
-            var result = _strategy.DoAlgorithm(_list);
-            result.ForEach(i => Console.Write($"{i}, "));
-            Console.WriteLine();
-        }
-
-        public List<int> GetList() => _list;
-    }
-
-    public interface IStrategy
-    {
-        public List<int> DoAlgorithm(List<int> list);
-    }
-
-
-    public class QuickSort : IStrategy
-    {
-        public List<int> DoAlgorithm(List<int> list)
-        {
-            Console.WriteLine("QuickSort");
-            return Do(list, 0, list.Count - 1);
-        }
-
-
-        private List<int> Do(List<int> list, int low, int high)
-        {
-            if (low >= high) return list;
-            var pi = partition(list, low, high);
-            Do(list, low, pi - 1);
-            Do(list, pi + 1, high);
-            return list;
-        }
-
-        private int partition(List<int> list, int low, int high)
-        {
-            var pivot = list[high];
-            var i = low - 1;
-
-            for (var j = low; j <= high - 1; j++)
+            if (_instance == null)
             {
-                if (list[j] < pivot)
+                lock (Locker)
                 {
-                    i++;
-                    (list[i], list[j]) = (list[j], list[i]);
+                    if (_instance == null)
+                    {
+                        _instance = new LoadBalancer();
+                        _instance.Value = value;
+                    }
                 }
             }
 
-            (list[i + 1], list[high]) = (list[high], list[i + 1]);
-            return i + 1;
+            return _instance;
         }
     }
 
-    public class BubbleSort : IStrategy
+    //BUILDER:
+
+    public class Manufacturer
     {
-        public List<int> DoAlgorithm(List<int> list)
+        public static void Construct(ComputerBuilder computerBuilder)
         {
-            Console.WriteLine("BubbleSort");
-
-            for (var i = 0; i < list.Count; i++)
-            for (var j = i + 1; j < list.Count; j++)
-            {
-                if (list[i] <= list[j]) continue;
-                (list[i], list[j]) = (list[j], list[i]);
-            }
-
-            return list;
+            computerBuilder.BuildCase();
+            computerBuilder.BuildCPU();
+            computerBuilder.BuildRAM();
+            computerBuilder.BuildGPU();
         }
     }
 
-    public class MergeSort : IStrategy
+
+    public abstract class ComputerBuilder
     {
-        public List<int> DoAlgorithm(List<int> list)
+        protected Computer computer;
+        public Computer Computer => computer;
+        public abstract void BuildCase();
+        public abstract void BuildCPU();
+        public abstract void BuildRAM();
+        public abstract void BuildGPU();
+    }
+
+    class OfficeComputerBuilder : ComputerBuilder
+    {
+        public OfficeComputerBuilder()
         {
-            Console.WriteLine("MergeSort");
-            return new List<int>();
+            computer = new Computer("Office");
+        }
+
+        public override void BuildCase() =>
+            computer["case"] = "Micro-ATX";
+
+        public override void BuildCPU() =>
+            computer["cpu"] = "4 cores";
+
+        public override void BuildRAM() =>
+            computer["ram"] = "8gb";
+
+        public override void BuildGPU() =>
+            computer["gpu"] = "Integrated with CPU";
+    }
+
+    class GamingComputerBuilder : ComputerBuilder
+    {
+        public GamingComputerBuilder()
+        {
+            computer = new Computer("Gaming");
+        }
+
+        public override void BuildCase() =>
+            computer["case"] = "ATX";
+
+        public override void BuildCPU() =>
+            computer["cpu"] = "8 cores";
+
+        public override void BuildRAM() =>
+            computer["ram"] = "32gb";
+
+        public override void BuildGPU() =>
+            computer["gpu"] = "RTX 3060 Ti";
+    }
+
+    public class Computer
+    {
+        private readonly string _computerType;
+        private readonly Dictionary<string, string> _parts = new();
+
+        public Computer(string computerType)
+        {
+            _computerType = computerType;
+        }
+
+        public string this[string key]
+        {
+            get => _parts[key];
+            set => _parts[key] = value;
+        }
+
+        public void Show()
+        {
+            Console.WriteLine("\n---------------------------");
+            Console.WriteLine($"Computer Type: {_computerType}");
+            Console.WriteLine($" Case : {_parts["case"]}");
+            Console.WriteLine($" CPU : {_parts["cpu"]}");
+            Console.WriteLine($" RAM: {_parts["ram"]}");
+            Console.WriteLine($" GPU : {_parts["gpu"]}");
         }
     }
+
+    //DECORATOR:
+
+    public abstract class RentalVehicle
+    {
+        public int Amount { get; set; }
+
+        public abstract void Display();
+    }
+
+    public class Scooter : RentalVehicle
+    {
+        private readonly string _type;
+        private readonly int _wheels;
+
+        public Scooter(string type, int wheels, int amount)
+        {
+            _type = type;
+            _wheels = wheels;
+            Amount = amount;
+        }
+
+        public override void Display()
+        {
+            Console.WriteLine("\nScooter ------ ");
+            Console.WriteLine($" Type: {_type}");
+            Console.WriteLine($" Wheels: {_wheels}");
+            Console.WriteLine($" Amount: {Amount}\n");
+        }
+    }
+
+    public class Car : RentalVehicle
+    {
+        private readonly string _brand;
+        private readonly string _model;
+        private readonly string _engine;
+
+        public Car(string brand, string model, string engine, int amount)
+        {
+            _brand = brand;
+            _model = model;
+            _engine = engine;
+            Amount = amount;
+        }
+
+        public override void Display()
+        {
+            Console.WriteLine("\nCar ----- ");
+            Console.WriteLine($" Brand: {_brand}");
+            Console.WriteLine($" Model: {_model}");
+            Console.WriteLine($" Engine: {_engine}");
+            Console.WriteLine($" Amount: {Amount}\n");
+        }
+    }
+
+    public abstract class Decorator : RentalVehicle
+    {
+        protected readonly RentalVehicle RentalVehicle;
+
+        public Decorator(RentalVehicle rentalVehicle)
+        {
+            RentalVehicle = rentalVehicle;
+        }
+
+        public override void Display() =>
+            RentalVehicle.Display();
+    }
+
+    public class Rentable : Decorator
+    {
+        protected readonly List<string> Renters = new();
+
+        public Rentable(RentalVehicle rentalVehicle) : base(rentalVehicle)
+        {
+        }
+
+        public void RentVehicle(string name)
+        {
+            Renters.Add(name);
+            RentalVehicle.Amount--;
+        }
+
+        public void ReturnVehicle(string name)
+        {
+            Renters.Remove(name);
+            RentalVehicle.Amount++;
+        }
+
+        public override void Display()
+        {
+            base.Display();
+            Renters.ForEach(Console.WriteLine);
+        }
+    }
+
 
     internal static class Program
     {
         private static void Main(string[] args)
         {
-            var studentRecords = new SortedList();
+            Console.WriteLine("\nSINGLETON: ");
+
+            var list = new List<LoadBalancer>
+            {
+                LoadBalancer.GetInstance("a"),
+                LoadBalancer.GetInstance("b"),
+                LoadBalancer.GetInstance("c")
+            };
+
+            if (list[0] == list[1] && list[1] == list[2])
+                Console.WriteLine("Same instance\n");
+
+            list.ForEach(b => Console.WriteLine(b.Value));
+
+
+            Console.WriteLine("\nBUILDER: ");
+
+            ComputerBuilder builder = new OfficeComputerBuilder();
+            Manufacturer.Construct(builder);
+            builder.Computer.Show();
+
+            builder = new GamingComputerBuilder();
+            Manufacturer.Construct(builder);
+            builder.Computer.Show();
             
-            // 4, 952, 997, 181, 316, 870, 413, 682, 866, 147, 944, 180, 270, 594, 898, 896, 264, 900, 701, 388, 897, 918, 847, 306, 74, 455, 444, 696, 123, 976
+            Console.WriteLine("\nDECORATOR: ");
+            
+            new Scooter("Electric", 2, 20).Display();
+            
+            var car = new Car("Tesla", "S", "762 KM", 2);
+            car.Display();
 
-            studentRecords.Add(1);
-            studentRecords.Add(133);
-            studentRecords.Add(23);
-            studentRecords.Add(53);
-            studentRecords.Add(0);
+            Console.WriteLine("RENTED CAR:");
 
-            studentRecords.SetStrategy(new QuickSort());
-            studentRecords.Sort();
+            var rentalcar = new Rentable(car);
+            rentalcar.RentVehicle("Kamil #1");
+            rentalcar.RentVehicle("Adam #2");
+            rentalcar.Display();
+            
+            
+            Console.WriteLine("\nONE CAR RETURNED:");
 
-            studentRecords.SetStrategy(new BubbleSort());
-            studentRecords.Sort();
-
-            studentRecords.SetStrategy(new MergeSort());
-            studentRecords.Sort();
+            rentalcar.ReturnVehicle("Adam #2");
+            rentalcar.Display();
         }
     }
 }
